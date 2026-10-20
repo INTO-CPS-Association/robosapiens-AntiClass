@@ -1,24 +1,16 @@
-# robosapiens-AntiClass: Inducing Neural Collapse via Anticlasses and One-Cold Cross-Entropy Loss
+# robosapiens-AntiClass
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-framework-EE4C2C.svg)](https://pytorch.org/)
-[![Paper](https://img.shields.io/badge/IEEE%20TNNLS-2025-00629B.svg)](https://ieeexplore.ieee.org/document/11053771)
 
-Official PyTorch implementation of [**Inducing Neural Collapse via Anticlasses and One-Cold Cross-Entropy Loss**](https://ieeexplore.ieee.org/document/11053771) (IEEE TNNLS, 2025).
+**AntiClass** is a PyTorch tool of the RoboSAPIENS project for training classifiers with the one-cold cross-entropy (OCCE) loss, a drop-in objective that is used together with the standard cross-entropy to structure the activations of the non-target classes.
 
-**Authors:** Dimitrios Katsikas, Nikolaos Passalis, Anastasios Tefas
-
-AntiClass provides the one-cold cross-entropy (OCCE) loss, a drop-in objective that is used together with the standard cross-entropy to structure the activations of the non-target classes. For every class we define an *anticlass*, i.e. everything that does not belong to the class, and train the network to spread its activations uniformly over it. This increases the degree of neural collapse during training and improves generalization in classification, open-set recognition and OOD detection.
+For every class we define an *anticlass*, i.e. everything that does not belong to the class, including the other classes as well as out-of-distribution samples and noise. The network is trained to spread its activations uniformly over the anticlass. This gives a more symmetric arrangement of the classes in the feature space, increases the degree of neural collapse during training and improves generalization in classification, open-set recognition and OOD detection.
 
 <p align="center">
   <img src="assets/framework.jpg" alt="AntiClass framework">
 </p>
-
-## Abstract
-
-While softmax cross-entropy (CE) loss is the standard objective for supervised classification, it primarily focuses on the ground-truth classes, ignoring the relationships between the nontarget, complementary classes. This leaves valuable information unexploited during optimization. In this work, we propose a novel loss function, one-cold CE (OCCE) loss, which addresses this limitation by structuring the activations of these complementary classes. Specifically, for each class, we define an anticlass, which consists of everything that is not part of the target class—this includes all complementary classes as well as out-of-distribution (OOD) samples, noise, or in general any instance that does not belong to the true class. By setting a uniform one-cold encoded distribution over the complementary classes as a target for each anticlass, we encourage the model to equally distribute activations across all nontarget classes. This approach promotes a symmetric geometric structure of classes in the final feature space, increases the degree of neural collapse (NC) during training, addresses the independence deficit problem of neural networks, and improves generalization. Our extensive evaluation shows that incorporating OCCE loss in the optimization objective consistently enhances performance across multiple settings, including classification, open-set recognition, and OOD detection.
-
 ## RoboSAPIENS and INTO-CPS
 
 AntiClass was developed at the Computational Intelligence and Deep Learning (CIDL) group, Aristotle University of Thessaloniki, within the **RoboSAPIENS** Horizon Europe project. It is distributed as part of the RoboSAPIENS / INTO-CPS open-source software ecosystem.
@@ -67,7 +59,7 @@ A CUDA-capable GPU is recommended. Make sure the installed PyTorch build matches
 
 ## Training
 
-All commands are run from the repository root. The following reproduce the closed-set classification results of Table 1 of the paper for a PreActResNet-18 (ResNet18v2) on CIFAR-100.
+All commands are run from the repository root. The following commands train a PreActResNet-18 (ResNet18v2) on CIFAR-100 with and without OCCE.
 
 Baseline cross-entropy:
 
@@ -75,7 +67,7 @@ Baseline cross-entropy:
 python scripts/train.py --model preactresnet18 --dataset cifar100 --w_ce 1.0 --w_occe 0.0 --gpu 0 --seed 0
 ```
 
-Unified CE + OCCE with γ = 1.0:
+CE + OCCE with γ = 1.0:
 
 ```bash
 python scripts/train.py --model preactresnet18 --dataset cifar100 --w_ce 1.0 --w_occe 1.0 --gpu 0 --seed 0
@@ -94,7 +86,7 @@ Main options of `scripts/train.py`:
 | `--dataset` | `mnist`, `cifar10` or `cifar100` |
 | `--model` | `preactresnet18` or `densenet121` |
 | `--w_ce` | Weight of the cross-entropy loss |
-| `--w_occe` | Weight of the OCCE loss (γ in the paper). We suggest a grid search in (0.01, 1) |
+| `--w_occe` | Weight of the OCCE loss (γ). We suggest a grid search in (0.01, 1) |
 | `--n_epochs` | Number of training epochs (default 150) |
 | `--lr`, `--milestones`, `--gamma` | SGD learning rate and step schedule |
 | `--seed` | Random seed |
@@ -103,7 +95,7 @@ Logs and the best checkpoint are written to `logs/<dataset>/<model>/<experiment>
 
 ## Example logs
 
-We provide example TensorBoard logs for three training runs (different seeds) in `logs/`. The baseline CE model achieves 24.83% test error, while adding OCCE reduces it to 23.80%. The small ~0.1% differences from the paper are due to different PyTorch versions, but the overall behavior should match across versions. To plot the accuracy curves from these logs:
+We provide example TensorBoard logs for three training runs (different seeds) in `logs/`. The baseline CE model achieves 24.83% test error, while adding OCCE reduces it to 23.80%. Small differences (~0.1%) from the published results are due to different PyTorch versions, but the overall behavior should match across versions. To plot the accuracy curves from these logs:
 
 ```bash
 python scripts/plot.py
@@ -122,16 +114,25 @@ ce, occe = nn.CrossEntropyLoss(), OCCELoss()
 loss = ce(logits, targets) + gamma * occe(logits, targets)
 ```
 
-In the paper we used this approach to evaluate the method in several settings, relying on the following repositories:
+This is how the loss was evaluated in further settings, using the following repositories:
 
 - **Open-set recognition:** [Adversarial Reciprocal Points Learning for Open Set Recognition (TPAMI'21)](https://github.com/iCGY96/ARPL)
 - **Out-of-distribution detection:** [OpenOOD: Benchmarking Generalized OOD Detection](https://github.com/Jingkang50/OpenOOD)
 - **Measuring neural collapse:** [A Geometric Analysis of Neural Collapse with Unconstrained Features](https://github.com/tding1/Neural-Collapse)
 - **Measuring independence deficit:** [Rank Diminishing in Deep Neural Networks](https://github.com/Yukun-Huang/Rank-Diminishing-in-Deep-Neural-Networks)
 
-## Citation
+## Associated publication
 
-For more technical details and results, please check our [paper](https://ieeexplore.ieee.org/document/11053771). If you use AntiClass in your work, please cite:
+AntiClass is based on the method described in:
+
+**Dimitrios Katsikas, Nikolaos Passalis, and Anastasios Tefas.
+"Inducing Neural Collapse via Anticlasses and One-Cold Cross-Entropy Loss."
+IEEE Transactions on Neural Networks and Learning Systems, 2025.**
+https://doi.org/10.1109/TNNLS.2025.3580892
+
+> **Abstract.** While softmax cross-entropy (CE) loss is the standard objective for supervised classification, it primarily focuses on the ground-truth classes, ignoring the relationships between the nontarget, complementary classes. This leaves valuable information unexploited during optimization. In this work, we propose a novel loss function, one-cold CE (OCCE) loss, which addresses this limitation by structuring the activations of these complementary classes. Specifically, for each class, we define an anticlass, which consists of everything that is not part of the target class—this includes all complementary classes as well as out-of-distribution (OOD) samples, noise, or in general any instance that does not belong to the true class. By setting a uniform one-cold encoded distribution over the complementary classes as a target for each anticlass, we encourage the model to equally distribute activations across all nontarget classes. This approach promotes a symmetric geometric structure of classes in the final feature space, increases the degree of neural collapse (NC) during training, addresses the independence deficit problem of neural networks, and improves generalization. Our extensive evaluation shows that incorporating OCCE loss in the optimization objective consistently enhances performance across multiple settings, including classification, open-set recognition, and OOD detection.
+
+If you use AntiClass in your work, please cite:
 
 ```bibtex
 @article{kat2025anticlasses,

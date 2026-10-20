@@ -1,6 +1,6 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite the paper below."
-title: "robosapiens-AntiClass: Inducing Neural Collapse via Anticlasses and One-Cold Cross-Entropy Loss"
+message: "If you use this software, please cite the associated publication below."
+title: "robosapiens-AntiClass"
 authors:
   - family-names: "Katsikas"
     given-names: "Dimitrios"

@@ -7,9 +7,9 @@ First public release of AntiClass under the INTO-CPS Association.
 - `OCCELoss` (one-cold cross-entropy) and baseline losses.
 - PreActResNet and DenseNet architectures for CIFAR-scale inputs.
 - Training script for MNIST, CIFAR-10 and CIFAR-100.
-- Script reproducing the CIFAR-100 / PreActResNet-18 results of the TNNLS paper.
+- Experiment script for CIFAR-100 / PreActResNet-18 (CE vs. CE + OCCE).
 - Example TensorBoard logs and plotting script.
 
 ## Notes
 
-Results may differ slightly (~0.1%) from the paper depending on the PyTorch version and hardware.
+Results may differ slightly (~0.1%) from the published results depending on the PyTorch version and hardware.
