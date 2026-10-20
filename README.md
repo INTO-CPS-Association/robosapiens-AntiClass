@@ -11,6 +11,7 @@ For every class we define an *anticlass*, i.e. everything that does not belong t
 <p align="center">
   <img src="assets/framework.jpg" alt="AntiClass framework">
 </p>
+
 ## RoboSAPIENS and INTO-CPS
 
 AntiClass was developed at the Computational Intelligence and Deep Learning (CIDL) group, Aristotle University of Thessaloniki, within the **RoboSAPIENS** Horizon Europe project. It is distributed as part of the RoboSAPIENS / INTO-CPS open-source software ecosystem.
