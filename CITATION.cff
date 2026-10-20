@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
+title: "AntiClass: Inducing Neural Collapse via Anticlasses and One-Cold Cross-Entropy Loss"
+authors:
+  - family-names: "Katsikas"
+    given-names: "Dimitrios"
+  - family-names: "Passalis"
+    given-names: "Nikolaos"
+  - family-names: "Tefas"
+    given-names: "Anastasios"
+version: "0.1.0"
+date-released: 2026-10-20
+license: Apache-2.0
+repository-code: "https://github.com/INTO-CPS-Association/AntiClass"
+keywords:
+  - RoboSAPIENS
+  - INTO-CPS
+  - neural collapse
+  - loss functions
+  - deep learning
+  - PyTorch
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Katsikas"
+      given-names: "Dimitrios"
+    - family-names: "Passalis"
+      given-names: "Nikolaos"
+    - family-names: "Tefas"
+      given-names: "Anastasios"
+  title: "Inducing Neural Collapse via Anticlasses and One-Cold Cross-Entropy Loss"
+  journal: "IEEE Transactions on Neural Networks and Learning Systems"
+  year: 2025
+  start: 1
+  end: 12
+  doi: "10.1109/TNNLS.2025.3580892"

@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual envs
+.venv*/
+venv/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Datasets, figures, checkpoints
+data/
+figures/
+*.pth
+*.pt
