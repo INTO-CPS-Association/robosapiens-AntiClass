@@ -48,8 +48,8 @@ AntiClass was developed at the Computational Intelligence and Deep Learning (CID
 ## Installation
 
 ```bash
-git clone https://github.com/INTO-CPS-Association/AntiClass.git
-cd AntiClass
+git clone https://github.com/INTO-CPS-Association/robosapiens-AntiClass.git
+cd robosapiens-AntiClass
 
 python -m venv .venv
 source .venv/bin/activate
