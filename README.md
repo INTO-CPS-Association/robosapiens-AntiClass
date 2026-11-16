@@ -25,7 +25,9 @@ AntiClass was developed at the Computational Intelligence and Deep Learning (CID
 .
 |-- assets/                   # Figures used in the README
 |-- experiments/
-|   `-- run_cifar100.sh       # Reproduces the CIFAR-100 results (3 seeds, CE vs. CE+OCCE)
+|   |-- run_cifar100.sh       # Reproduces the CIFAR-100 results (3 seeds, CE vs. CE+OCCE)
+|   |-- run_open_set.sh       # Open-set recognition on all benchmarks and splits
+|   `-- run_ood.sh            # OOD detection on CIFAR-10 / CIFAR-100
 |-- logs/                     # Example TensorBoard logs (CIFAR-100, PreActResNet-18)
 |-- losses/
 |   `-- losses.py             # OCCELoss and the baseline losses
@@ -33,10 +35,11 @@ AntiClass was developed at the Computational Intelligence and Deep Learning (CID
 |   |-- preactresnet.py       # PreActResNet-18/34/50/101/152
 |   `-- densenet.py           # DenseNet-121/161/169/201
 |-- scripts/
-|   |-- train.py              # Training / evaluation entry point
+|   |-- train.py              # Training / evaluation entry point for all tasks
 |   `-- plot.py               # Accuracy curves from the TensorBoard logs
 |-- utils/
-|   |-- datasets.py           # MNIST, CIFAR-10, CIFAR-100 loaders
+|   |-- datasets.py           # Closed-set, open-set and OOD dataset loaders
+|   |-- metrics.py            # AUROC, FPR@95%TPR, OSCR and OOD scores
 |   `-- utils.py              # Seeding and metric helpers
 |-- CITATION.cff
 |-- CONTRIBUTING.md
@@ -56,11 +59,15 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-A CUDA-capable GPU is recommended. Make sure the installed PyTorch build matches the CUDA version on your system. Datasets are downloaded automatically to `data/` on the first run.
+A CUDA-capable GPU is recommended. Make sure the installed PyTorch build matches the CUDA version on your system. Datasets are downloaded automatically to `data/` on the first run (or to the folder given with `--data_root`).
 
 ## Training
 
-All commands are run from the repository root. The following commands train a PreActResNet-18 (ResNet18v2) on CIFAR-100 with and without OCCE.
+All commands are run from the repository root. The task is selected with `--task`: `classification` (default), `open_set` or `ood`.
+
+### Closed-set classification
+
+The following commands train a PreActResNet-18 (ResNet18v2) on CIFAR-100 with and without OCCE.
 
 Baseline cross-entropy:
 
@@ -80,11 +87,71 @@ To run both settings for seeds 0, 1 and 2 and plot the results:
 bash experiments/run_cifar100.sh
 ```
 
+### Open-set recognition
+
+The model is trained on the known classes of a split and evaluated on known vs. unknown test samples. We follow the standard benchmarks and the five known/unknown class splits of [ARPL](https://github.com/iCGY96/ARPL):
+
+| `--dataset` | Known classes | Unknown classes |
+|---|---|---|
+| `mnist` | 6 MNIST digits | remaining 4 digits |
+| `svhn` | 6 SVHN digits | remaining 4 digits |
+| `cifar10` | 6 CIFAR-10 classes | remaining 4 classes |
+| `cifar+10` | 4 CIFAR-10 classes | 10 CIFAR-100 classes |
+| `cifar+50` | 4 CIFAR-10 classes | 50 CIFAR-100 classes |
+| `tiny_imagenet` | 20 Tiny ImageNet classes | remaining 180 classes |
+
+```bash
+python scripts/train.py --task open_set --dataset cifar10 --split 0 --w_ce 1.0 --w_occe 1.0 --gpu 0
+```
+
+During training, the closed-set accuracy, AUROC and OSCR are logged to TensorBoard. At the end, the best checkpoint is evaluated and the results are saved in `results.json`. To run all benchmarks and splits:
+
+```bash
+bash experiments/run_open_set.sh
+```
+
+### Out-of-distribution detection
+
+The model is trained on CIFAR-10 or CIFAR-100 and evaluated on the near-OOD and far-OOD datasets of the [OpenOOD](https://github.com/Jingkang50/OpenOOD) benchmark:
+
+| In-distribution | Near-OOD | Far-OOD |
+|---|---|---|
+| `cifar10` | CIFAR-100, Tiny ImageNet | MNIST, SVHN, Textures, Places365 |
+| `cifar100` | CIFAR-10, Tiny ImageNet | MNIST, SVHN, Textures, Places365 |
+
+```bash
+python scripts/train.py --task ood --dataset cifar10 --w_ce 1.0 --w_occe 1.0 --gpu 0
+```
+
+AUROC and FPR@95%TPR are reported for each OOD dataset and averaged over near- and far-OOD. A subset of OOD datasets can be selected with `--ood_datasets`, and an already trained model can be evaluated without training with `--checkpoint`:
+
+```bash
+python scripts/train.py --task ood --dataset cifar10 --ood_datasets svhn texture \
+  --checkpoint logs/ood/cifar10/preactresnet18/<experiment>/checkpoint.pth
+```
+
+To run both datasets for seeds 0, 1 and 2:
+
+```bash
+bash experiments/run_ood.sh
+```
+
+The OOD datasets are taken from torchvision (Tiny ImageNet from the official archive) and resized to 32x32. OpenOOD uses curated versions of some of these sets (e.g. Tiny ImageNet and Places365 without the classes that overlap with CIFAR), so numbers are not directly comparable with the OpenOOD leaderboard.
+
+All open-set and OOD metrics are computed with three post-hoc scores: maximum softmax probability (`msp`), maximum logit (`max_logit`) and `energy`.
+
+### Options
+
 Main options of `scripts/train.py`:
 
 | Parameter | Description |
 |---|---|
-| `--dataset` | `mnist`, `cifar10` or `cifar100` |
+| `--task` | `classification`, `open_set` or `ood` |
+| `--dataset` | Dataset of the selected task (see above) |
+| `--split` | Known/unknown class split for `open_set`, 0-4 |
+| `--ood_datasets` | OOD test sets for `ood`: `cifar10`, `cifar100`, `tin`, `mnist`, `svhn`, `texture`, `places365` |
+| `--checkpoint` | Evaluate this checkpoint instead of training |
+| `--data_root` | Dataset folder (default `data`) |
 | `--model` | `preactresnet18` or `densenet121` |
 | `--w_ce` | Weight of the cross-entropy loss |
 | `--w_occe` | Weight of the OCCE loss (γ). We suggest a grid search in (0.01, 1) |
@@ -92,7 +159,7 @@ Main options of `scripts/train.py`:
 | `--lr`, `--milestones`, `--gamma` | SGD learning rate and step schedule |
 | `--seed` | Random seed |
 
-Logs and the best checkpoint are written to `logs/<dataset>/<model>/<experiment>/`.
+Logs and the best checkpoint are written to `logs/<dataset>/<model>/<experiment>/` for classification and to `logs/<task>/<dataset>/<model>/<experiment>/` for the other tasks.
 
 ## Example logs
 
@@ -115,7 +182,7 @@ ce, occe = nn.CrossEntropyLoss(), OCCELoss()
 loss = ce(logits, targets) + gamma * occe(logits, targets)
 ```
 
-This is how the loss was evaluated in further settings, using the following repositories:
+The open-set recognition and OOD detection tasks follow the benchmarks of the repositories below, which can also be used to evaluate the loss together with other methods:
 
 - **Open-set recognition:** [Adversarial Reciprocal Points Learning for Open Set Recognition (TPAMI'21)](https://github.com/iCGY96/ARPL)
 - **Out-of-distribution detection:** [OpenOOD: Benchmarking Generalized OOD Detection](https://github.com/Jingkang50/OpenOOD)

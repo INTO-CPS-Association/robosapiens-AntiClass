@@ -3,5 +3,6 @@ torchvision
 torchaudio
 tensorboard
 tqdm
+scikit-learn
 plotly
 kaleido
